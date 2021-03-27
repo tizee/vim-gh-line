@@ -182,6 +182,8 @@ func! s:gh_repo() range
       if remote_ref != "master"
         let url_path = "/tree/\\?h\\=" . s:EscapedRemoteRef(remote_ref)
       endif
+    elseif s:CustomSrc(remote_url)
+      let url = s:CustomGitURL(remote_url)
     else
         throw 'The remote: ' . remote_url . ' has not been recognized as belonging to ' .
             \ 'one of the supported git hosting environments: ' .
@@ -240,6 +242,10 @@ func! s:Commit(cdDir)
   else
     return system(a:cdDir . 'git rev-parse --abbrev-ref HEAD')
   endif
+endfunc
+
+func! s:CustomSrc(remote_url)
+  return match(a:remote_url, '.git') >= 0
 endfunc
 
 func! s:Github(remote_url)
@@ -336,6 +342,15 @@ func! s:EscapedRemoteRef(remote_ref)
 
   return substitute(l:remote_ref, "#", "%23", "g")
 endfun
+
+function! s:CustomGitURL(remote_url)
+  let l:rv = s:TransformSSHToHTTPS(a:remote_url)
+  let l:rv = s:StripNL(l:rv)
+  let l:rv = s:StripSuffix(l:rv, '.git')
+  let l:rv = substitute(l:rv, 'https://', 'http://', '')
+
+  return l:rv
+endfunction
 
 func! s:GithubUrl(remote_url)
   let l:rv = s:TransformSSHToHTTPS(a:remote_url)
